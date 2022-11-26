@@ -74,11 +74,11 @@ class TrainSampler(Sampler):
             if label not in label_cluster:
                 label_cluster[label] = []
             label_cluster[label].append(i)
-        for key, value in label_cluster.items():
+        for value in label_cluster.values():
             random.shuffle(value)
 
         assert len(label_cluster[0]) > self.num_pos_samples, \
-            f"only {len(label_cluster[0])} samples in each class, but {self.num_pos_samples} pos samples needed"
+                f"only {len(label_cluster[0])} samples in each class, but {self.num_pos_samples} pos samples needed"
 
         # too time-consuming, i.e., O(|D||C|/|B|)s
         batch_indices = []
@@ -87,7 +87,7 @@ class TrainSampler(Sampler):
             # find a valid positive sample class
             available_classes = list(filter(lambda x: len(label_cluster[x]) >= self.num_pos_samples,
                                             list(range(max(self.y) + 1))))
-            if len(available_classes) == 0:
+            if not available_classes:
                 break
             class_count = random.choice(available_classes)
 
@@ -96,11 +96,11 @@ class TrainSampler(Sampler):
             del label_cluster[class_count][-self.num_pos_samples:]
 
             # fill in negative samples
-            for i in range(self.batch_size - self.num_pos_samples):
+            for _ in range(self.batch_size - self.num_pos_samples):
                 available_classes = list(filter(lambda x: len(label_cluster[x]) > 0, list(range(max(self.y) + 1))))
                 if class_count in available_classes:
                     available_classes.remove(class_count)
-                if len(available_classes) == 0:
+                if not available_classes:
                     flag = False
                     break
                 rand_class = random.choice(available_classes)
@@ -127,7 +127,7 @@ class TrainSamplerMultiClass(Sampler):
         self.num_classes = num_classes
         self.samples_per_author = samples_per_author
         assert batch_size // num_classes * num_classes == batch_size, \
-            f'batch size {batch_size} is not a multiple of num of classes {num_classes}'
+                f'batch size {batch_size} is not a multiple of num of classes {num_classes}'
         print(f'train sampler with batch size = {batch_size} and {num_classes} classes in a batch')
         self.length = len(list(self.__iter__()))
 
@@ -141,16 +141,16 @@ class TrainSamplerMultiClass(Sampler):
             label_cluster[label].append(i)
 
         assert len(label_cluster) > self.num_classes, \
-            f'number of available classes {label_cluster} < required classes {self.num_classes}'
+                f'number of available classes {label_cluster} < required classes {self.num_classes}'
 
         num_samples_per_class_batch = self.batch_size // self.num_classes
-        min_class_samples = min([len(x) for x in label_cluster.values()])
+        min_class_samples = min(len(x) for x in label_cluster.values())
         assert min_class_samples > self.samples_per_author, \
-            f"expected {self.samples_per_author} per author, but got {min_class_samples} in the dataset"
+                f"expected {self.samples_per_author} per author, but got {min_class_samples} in the dataset"
         class_samples_needed = self.samples_per_author // num_samples_per_class_batch * num_samples_per_class_batch
 
         dataset_matrix = []
-        for key, value in label_cluster.items():
+        for value in label_cluster.values():
             random.shuffle(value)
             # value = [key] * len(value)    # debugging use
             dataset_matrix.append(torch.tensor(value[:class_samples_needed]).view(num_samples_per_class_batch, -1))
@@ -189,7 +189,7 @@ class TrainSamplerMultiClassUnit(Sampler):
             label_cluster[label].append(i)
 
         dataset_matrix = []
-        for key, value in label_cluster.items():
+        for value in label_cluster.values():
             random.shuffle(value)
             num_valid_samples = len(value) // self.sample_unit_size * self.sample_unit_size
             dataset_matrix.append(torch.tensor(value[:num_valid_samples]).view(self.sample_unit_size, -1))
@@ -230,7 +230,7 @@ class TransformerEnsembleDataset(Dataset):
         self.x = x
         self.tokenizers = tokenizers
         self.lengths = lengths
-        self.caches = [{} for i in range(len(tokenizers))]
+        self.caches = [{} for _ in range(len(tokenizers))]
         self.y = torch.tensor(y)
 
     def tokenize(self, x, i):

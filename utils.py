@@ -62,13 +62,11 @@ def configcell_text_and_colors(array_df, lin, col, oText, facecolors, posi, fz, 
                 tot_rig = 0
                 for i in range(array_df.shape[0] - 1):
                     tot_rig += array_df[i][i]
-                per_ok = (float(tot_rig) / cell_val) * 100
             elif (col == ccl - 1):
                 tot_rig = array_df[lin][lin]
-                per_ok = (float(tot_rig) / cell_val) * 100
-            elif (lin == ccl - 1):
+            else:
                 tot_rig = array_df[col][col]
-                per_ok = (float(tot_rig) / cell_val) * 100
+            per_ok = (float(tot_rig) / cell_val) * 100
             per_err = 100 - per_ok
         else:
             per_ok = per_err = 0
@@ -128,12 +126,8 @@ def configcell_text_and_colors(array_df, lin, col, oText, facecolors, posi, fz, 
 
 def insert_totals(df_cm):
     """ insert total column and line (the last ones) """
-    sum_col = []
-    for c in df_cm.columns:
-        sum_col.append(df_cm[c].sum())
-    sum_lin = []
-    for item_line in df_cm.iterrows():
-        sum_lin.append(item_line[1].sum())
+    sum_col = [df_cm[c].sum() for c in df_cm.columns]
+    sum_lin = [item_line[1].sum() for item_line in df_cm.iterrows()]
     df_cm['sum_lin'] = sum_lin
     sum_col.append(np.sum(sum_lin))
     df_cm.loc['sum_col'] = sum_col
@@ -191,12 +185,10 @@ def pretty_plot_confusion_matrix(df_cm, annot=True, cmap="Oranges", fmt='.2f', f
     array_df = np.array(df_cm.to_records(index=False).tolist())
     text_add = [];
     text_del = [];
-    posi = -1  # from left to right, bottom to top.
-    for t in ax.collections[0].axes.texts:  # ax.texts:
+    for posi, t in enumerate(ax.collections[0].axes.texts):  # ax.texts:
         pos = np.array(t.get_position()) - [0.5, 0.5]
         lin = int(pos[1]);
         col = int(pos[0]);
-        posi += 1
         # print ('>>> pos: %s, posi: %s, val: %s, txt: %s' %(pos, posi, array_df[lin][col], t.get_text()))
 
         # set text
@@ -233,7 +225,11 @@ def plot_confusion_matrix_from_data(y_test, predictions, columns=None, annot=Tru
     # data
     if (not columns):
         from string import ascii_uppercase
-        columns = ['class %s' % (i) for i in list(ascii_uppercase)[0:len(np.unique(y_test))]]
+        columns = [
+            f'class {i}'
+            for i in list(ascii_uppercase)[: len(np.unique(y_test))]
+        ]
+
 
     confm = confusion_matrix(y_test, predictions)
     cmap = 'Oranges';
@@ -250,8 +246,7 @@ def fil_sent(sent):
     Filter stopwords
     """
     stop_words = set(stopwords.words('english'))
-    filtered_sentence = ' '.join([w for w in sent.split() if not w in stop_words])
-    return filtered_sentence
+    return ' '.join([w for w in sent.split() if w not in stop_words])
 
 
 def process(sent):
