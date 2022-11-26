@@ -52,7 +52,7 @@ splits = ['test', 'train', 'valid']
 # line = infile.readline()
 # while line != '':
 # update 20220208: consider all train(1) - test(0) - valid(2)
-final_df = pd.read_csv(f'datasets/TuringBench/AA/train.csv')
+final_df = pd.read_csv('datasets/TuringBench/AA/train.csv')
 for rd, split_name in enumerate(splits):
     df = pd.read_csv(f'datasets/TuringBench/AA/{split_name}.csv')
     df['From'] = df['label'].parallel_apply(lambda x: authors.index(x))
@@ -72,8 +72,5 @@ for rd, split_name in enumerate(splits):
         "f_t", "f_u", "f_v", "f_w", "f_x", "f_y", "f_z", "f_0", "f_1", "f_2", "f_3", "f_4", "f_5", "f_6", "f_7",
         "f_8", "f_9", "f_e_0", "f_e_1", "f_e_2", "f_e_3", "f_e_4", "f_e_5", "f_e_6", "f_e_7", "f_e_8", "f_e_9",
         "f_e_10", "f_e_11", "richness"]] = df['content'].parallel_apply(lambda x: extract_style(x))
-    if rd == 0:
-        final_df = df
-    else:
-        final_df = pd.concat([final_df, df], axis=0)
-final_df.to_csv(f'datasets/turing_ori_0208.csv')
+    final_df = df if rd == 0 else pd.concat([final_df, df], axis=0)
+final_df.to_csv('datasets/turing_ori_0208.csv')

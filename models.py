@@ -19,9 +19,7 @@ class LogisticRegression(nn.Module):
 
     def forward(self, x, return_feat=False):
         out = self.nn(x)
-        if return_feat:
-            return out, x
-        return out
+        return (out, x) if return_feat else out
 
 
 class MLP2Layer(nn.Module):
@@ -58,9 +56,7 @@ class BertClassifier(nn.Module):
         feature = self.bert(input_ids=x[0], attention_mask=x[2])
         # out = self.fc(feature.pooler_output.flatten(1))       # not good for our task     # (BS, E)
         out = self.fc(feature.last_hidden_state.flatten(1))  # (BS, T, E)
-        if return_feat:
-            return out, feature.last_hidden_state.flatten(1)
-        return out
+        return (out, feature.last_hidden_state.flatten(1)) if return_feat else out
 
 
 @dataclass
@@ -81,9 +77,7 @@ class SimpleEnsemble(nn.Module):
 
     def forward(self, inputs):
         assert len(self.components) == len(inputs)
-        preds = []
-        for model, input in zip(self.components, inputs):
-            preds.append(model(input))
+        preds = [model(input) for model, input in zip(self.components, inputs)]
         return sum(preds) / len(preds)
 
 
@@ -190,10 +184,7 @@ class AggregateFeatEnsemble(nn.Module):
             out.append(feats)
         if return_preds:
             out.append(preds)
-        if len(out) == 1:
-            return out[0]
-        else:
-            return out
+        return out[0] if len(out) == 1 else out
 
     # def forward(self, feats):
     #     return self.nn(feats)
@@ -229,6 +220,4 @@ class EnsembleClassifier(nn.Module):
         ensembleTensor = torch.cat((stylePred, charPred, bertPred, x[0], x[1], bertFeature), dim=1)
         # out = self.fc(feature.pooler_output.flatten(1))
         out = self.finalClassifier(ensembleTensor)
-        if return_feat:
-            return out, bertFeature
-        return out
+        return (out, bertFeature) if return_feat else out

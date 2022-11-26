@@ -158,7 +158,7 @@ def train_bert(train_dict, test_dic, tqdm_on, model_name, embed_len, id, num_epo
                 tv_loss_1 = AverageMeter()
                 tv_loss_2 = AverageMeter()
                 tv_loss = AverageMeter()
-                for i, (x1, x2, x3, y) in enumerate(pg):
+                for x1, x2, x3, y in pg:
                     x, y = (x1.cuda(), x2.cuda(), x3.cuda()), y.cuda()
                     pred, feats = model(x, return_feat=True)
 
@@ -194,7 +194,7 @@ def train_bert(train_dict, test_dic, tqdm_on, model_name, embed_len, id, num_epo
             test_loss_1 = AverageMeter()
             test_loss_2 = AverageMeter()
             test_loss = AverageMeter()
-            for i, (x1, x2, x3, y) in enumerate(pg):
+            for x1, x2, x3, y in pg:
                 x, y = (x1.cuda(), x2.cuda(), x3.cuda()), y.cuda()
                 pred, feats = model(x, return_feat=True)
 
@@ -242,13 +242,12 @@ def train_bert(train_dict, test_dic, tqdm_on, model_name, embed_len, id, num_epo
         final_test_acc = test_acc.avg
 
         # save model
-        if test_acc.avg:
-            if test_acc.avg >= best_acc:
-                cur_models = os.listdir(exp_dir)
-                for cur_model in cur_models:
-                    if cur_model.endswith(".pt"):
-                        os.remove(os.path.join(exp_dir, cur_model))
-                save_model(exp_dir, f'{id}_val{final_test_acc:.5f}_e{epoch}.pt', model)
+        if test_acc.avg and test_acc.avg >= best_acc:
+            cur_models = os.listdir(exp_dir)
+            for cur_model in cur_models:
+                if cur_model.endswith(".pt"):
+                    os.remove(os.path.join(exp_dir, cur_model))
+            save_model(exp_dir, f'{id}_val{final_test_acc:.5f}_e{epoch}.pt', model)
         best_acc = max(best_acc, test_acc.avg)
 
         if val_dic is not None:
